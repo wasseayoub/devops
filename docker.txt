@@ -1,0 +1,156 @@
+docker container run nginx
+docker container run --name machine -ti ubuntu
+docker container ps -a
+docker container exec -it machine /bin/bash
+docker start machine
+docker container stop $(docker container ps -aq)
+docker container start $(docker container ps -aq)
+docker container rm $(docker ps -aq)
+
+
+etape de creation site web mdify page index:
+docker container run -d -p 8080:80 --name web1 nginx
+
+docker container exec -it web1 /bin/bash
+echo "Bonjour" > /usr/share/nginx/html/index.html 
+
+--------------------------volume-----------------------------:
+
+docker create volume wasse
+docker run -v wasse:/usr/share/nginx/html -d -p 8080:80 nginx
+docker volume inspect wasse
+echo 'wasse' > /var/lib/docker/volumes/wasse/_data/index.html
+
+2.Bind Mounts :
+docker run -v /chemin/sur/hote:/chemin/dans/conteneur image_docker
+
+
+--------------------------docker-file-----------------------------:
+
+Dockerfile
+ROM ubuntu
+RUN apt update -y && apt install nginx -y
+WORKDIR /var/www/html
+COPY index.html .
+EXPOSE 80/tcp
+CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
+
+
+docker image build -t wasse .
+docker run -d -p 8077:80 --name IMAGE wasse
+
+
+
+----------------------------compose-------------------------------:
+version: '3.3'
+services:
+  wordpress:
+    image: wordpress
+    depends_on:
+      - mysql
+    ports:
+    - 8080:80
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    volumes:
+      - ./wordpress-data:/var/www/html
+    networks:
+      - my_net
+
+  mysql:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - my_net
+
+volumes:
+  mysql-data:
+
+networks:
+  my_net:
+
+
+
+----commandes compose---
+sudo apt install docker-compose
+docker-compose up -d
+
+docker-compose down
+
+----------------swarm--------
+docker swarm init --advertise-addr @ip
+docker node ls
+docker network ls
+docker service create --replicas 5 -p 8099:80 --name web2 nginx
+docker service ls
+docker service ps web2
+
+docker service scale web=10
+docker run -it -d -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock dockersamples/visualizer
+
+----------------stack----------
+
+compose.yaml:
+
+version: '3.3'
+services:
+  wordpress:
+    image: wordpress
+    depends_on:
+      - mysql
+    ports:
+      - "80:80"
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    volumes:
+      - wordpress-data:/var/www/html
+    networks:
+      - my_net
+
+  mysql:
+    image: mariadb
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - my_net
+
+networks:
+  my_net:s
+
+volumes:
+  wordpress-data:
+  mysql-data:
+
+
+docker stack deploy -c compose.yml ltest
+docker stack ps ltest
+
+
+--------------------------------------

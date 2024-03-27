@@ -1,0 +1,368 @@
+Minikube: lien telechargement:https://www.learnitguide.net/2023/04/how-to-install-minikube-on-ubuntu-2004.html#google_vignette
+
+
+
+
+
+--------------Nodes-----------------:
+
+minikube start --nodes=3
+minikube node add
+
+-----------------PODS----------------:
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: nginx2
+ labels:
+  owner: ayoub
+spec:
+ containers:
+ - name: nginx
+   image: nginx:latest
+   ports:
+    - containerPort: 80
+
+kubectl describe pod nom
+kubectl exec -it nginx -- /bin/bash
+echo "hello" > /usr/share/nginx/html/index.html
+curl https://localhost
+minikube dashboard --url
+kubectl create -f name
+kubectl apply -f name
+kubectl delete pod name
+
+
+
+---------labels&selectors---------------------:
+kubectl label pod nginx-pod app=dev
+
+kubectl get pods --show-labels
+
+kubectl get pods --selector app=dev
+
+
+kubectl get pods -o wide
+
+minikube ssh
+
+curl @IP
+
+
+
+---------replicaset---------------------:
+
+
+------Deployments------:
+kubectl create deployment test1 --image=nginx
+kubectl scale deployment test --replicas=3
+kubectl api-resources
+
+
+	--yaml--
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dep1
+spec:
+  replicas: 7
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx
+        ports:
+        - containerPort: 80
+
+kubectl apply -f file.yaml
+kubectl delete deployment test
+
+---------shudling---------------------:
+
+
+
+
+
+
+
+---------SERVICE---------------------:
+
+kubectl expose deployment dep1 --name=service-test --type=ClusterIP --port=8080
+forward pod:kubectl port-forward pod/nginx2 8080:80
+kubectl port-forward deployment/dep1 8090:80
+kubectl port-forward service/service-test 8010:8080
+minikube service service-test
+
+
+-----service clusterIP----------------:
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-python
+spec:
+  selector:
+    run: pod-python
+  type: ClusterIP
+  ports:
+    - port: 3000
+      protocol: TCP
+      targetPort: 443
+
+
+
+-----service clusterIP----------------:
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-python
+spec:
+  selector:
+    run: pod-python
+  type: ClusterIP
+  ports:
+    - port: 3000
+      protocol: TCP
+      targetPort: 443
+
+
+
+
+-----service loadbalancer----------------:
+
+apiVersion: v1
+kind: Service
+metadata:
+ name: service-python
+spec:
+ selector:
+   run: pod-python
+ type: LoadBalancer
+ ports:
+   - port: 3000
+     protocol: TCP
+     TargetPort: 443
+     nodePort : 30080
+
+kubectl get svc
+
+
+
+
+
+
+
+----------------NOT WORK-----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        image: wordpress
+        ports:
+        - containerPort: 80
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql
+        - name: WORDPRESS_DB_NAME
+          value: wordpress
+        - name: WORDPRESS_DB_USER
+          value: wordpress
+        - name: WORDPRESS_DB_PASSWORD
+          value: wordpress
+        volumeMounts:
+        - name: wordpress-data
+          mountPath: /var/www/html
+      volumes:
+      - name: wordpress-data
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mariadb
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: wordpress
+        - name: MYSQL_DATABASE
+          value: wordpress
+        - name: MYSQL_USER
+          value: wordpress
+        - name: MYSQL_PASSWORD
+          value: wordpress
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  selector:
+    app: wordpress
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  type: ClusterIP
+
+
+--------2--------
+
+-----------------
+kubectl expose deployment web-dep --name=web-service --type=ClusterIP --port=8080 --target-port=8080
+
+# kubectl get all == 5tar smit pod == pod name
+kubectl port-forward pod_name 8080:80
+
+
+------------------------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+
+
+
+minikube service nginx-service
+
+
+------------------------
+
+
+
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-app-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+
+
+
+
+
+
+
+------------
+NOT WORK (BD ERROR)
+------------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-mysql
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wordpress-mysql
+  template:
+    metadata:
+      labels:
+        app: wordpress-mysql
+    spec:
+      containers:
+      - name: wordpress
+        image: wordpress:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql
+        - name: WORDPRESS_DB_NAME
+          value: wordpress
+        - name: WORDPRESS_DB_USER
+          value: wordpress
+        - name: WORDPRESS_DB_PASSWORD
+          value: wordpress
+      - name: mysql
+        image: mariadb
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: wordpress
+        - name: MYSQL_USER
+          value: wordpress
+        - name: MYSQL_DATABASE
+          value: wordpress
+        - name: MYSQL_PASSWORD
+          value: wordpress
+
+
+
+
